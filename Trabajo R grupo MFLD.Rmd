@@ -1,0 +1,355 @@
+---
+title: Trabajo de programacion en R
+author:
+  - name: Daniel Andolfi
+    email: daniandolfi@gmail.com
+    affiliation: Universidad Nacional de Cuyo
+    correspondingauthor: true
+    footnote: 1
+  - name: Martina Alvarez
+    email: bob@example.com
+    affiliation: Universidad Nacional de Cuyo
+  - name: Felicitas Bascolo
+    email: cat@example.com
+    affiliation: Universidad Nacional de Cuyo
+    footnote: 2
+  - name: Lisandro Herrera
+    email: derek@example.com
+    affiliation: Universidad Nacional de Cuyo
+    footnote: 2
+address:
+  - code: Some Institute of Technology
+    address: Mendoza, Argentina
+footnote:
+  - code: 1
+    text: "This is the first author footnote."
+  - code: 2
+    text: "Another author footnote."
+abstract: |
+  En este informe se resolveran los ejercicios planteados por la catedra "Tecnicas y Herramientas Modernas" para la programacion en R 
+  
+keywords: 
+  - Modulo 2
+  - Programacion en R
+journal: "An awesome journal"
+date: "`r Sys.Date()`"
+classoption: preprint, 3p, authoryear
+bibliography: mybibfile.bib
+linenumbers: false
+numbersections: true
+# Use a CSL with `citation_package = "default"`
+# csl: https://www.zotero.org/styles/elsevier-harvard
+output: 
+  rticles::elsevier_article:
+    keep_tex: true
+    citation_package: natbib
+---
+
+
+# Metodo sys.time
+
+Este metodo para medir el tiempo de ejecucion de un codigo viene ya determinado con la base de R 
+
+```{r}
+duermete_un_minuto <- function() { Sys.sleep(5) }
+start_time <- Sys.time()
+duermete_un_minuto()
+end_time <- Sys.time()
+end_time - start_time
+```
+
+
+# Metodo biblioteca tictoc
+
+Descargamos e instalamos la biblioteca Tictoc para medir el tiempo de ejecucion del codigo 
+
+```{r}
+library(tictoc)
+tic("sleeping")
+A<-20
+print("dormire una siestita...")
+```
+
+```{r}
+Sys.sleep(2)
+print("...suena el despertador")
+```
+
+```{r}
+toc()
+```
+
+
+# Metodo biblioteca rbenchmark
+
+Descargamos e instalamos la biblioteca rbenchmark para medir el tiempo de ejecucion del codigo
+
+```{r}
+library(rbenchmark)
+# lm crea una regresion lineal
+benchmark("lm" = {
+X <- matrix(rnorm(1000), 100, 10)
+y <- X %*% sample(1:10, 10) + rnorm(100)
+b <- lm(y ~ X + 0)$coef
+},
+"pseudoinverse" = {
+X <- matrix(rnorm(1000), 100, 10)
+y <- X %*% sample(1:10, 10) + rnorm(100)
+b <- solve(t(X) %*% X) %*% t(X) %*% y
+},
+"linear system" = {
+X <- matrix(rnorm(1000), 100, 10)
+y <- X %*% sample(1:10, 10) + rnorm(100)
+b <- solve(t(X) %*% X, t(X) %*% y)
+},
+replications = 1000,
+columns = c("test", "replications", "elapsed",
+"relative", "user.self", "sys.self"))
+```
+
+
+# Metodo biblioteca microbenchmark
+
+Descargamos e instalamos la biblioteca microbenchmark que nos va a permitir comparar tiempos de ejecucion de múltiples fragmentos de código R. Con este metodo se puede ver de forma grafica el uso de recursos.
+
+```{r}
+library(microbenchmark)
+set.seed(2017)
+n <- 10000
+p <- 100
+X <- matrix(rnorm(n*p), n, p)
+y <- X %*% rnorm(p) + rnorm(100)
+check_for_equal_coefs <- function(values) {
+tol <- 1e-12
+max_error <- max(c(abs(values[[1]] - values[[2]]),
+abs(values[[2]] - values[[3]]),
+abs(values[[1]] - values[[3]])))
+max_error < tol
+}
+mbm <- microbenchmark("lm" = { b <- lm(y ~ X + 0)$coef },
+"pseudoinverse" = {
+b <- solve(t(X) %*% X) %*% t(X) %*% y
+},
+"linear system" = {
+b <- solve(t(X) %*% X, t(X) %*% y)
+},
+check = check_for_equal_coefs)
+mbm
+```
+
+```{r}
+library(ggplot2)
+autoplot(mbm)
+```
+
+
+# Trabajo de evaluacion del modulo
+
+
+## Comparar la generacion de un vector secuencia
+
+
+### Secuencia generada con for
+
+Vamos a generar un vector secuencia usando "for" y vamos a medir el tiempo de ejecucicion a traves del metodo Sys.time
+
+```{r}
+start_time <- Sys.time()
+for (i in 1:50000) { A[i] <- (i*2)}
+head (A)
+tail(A)
+end_time <- Sys.time()
+end_time - start_time
+```
+
+### Secuencia generada con R
+
+Vamos a generar un vector secuencia usando el comendo "seq" que viene de base con el RStudio y vamos a medir el tiempo de ejecucicion a traves del metodo Sys.time
+
+```{r}
+start_time <- Sys.time()
+A <- seq(1,1000000, 2)
+head (A)
+tail(A)
+end_time <- Sys.time()
+end_time - start_time
+```
+
+
+A traves del metodo "Systime" podemos ver que para generar un vector secuencia que contiene numeros del 1 al 100.000 en intervalos de 2 va a requerir menor tiempo de ejecucion el comando para generar secuencias "seq" que ya viene de base con el RStudio
+
+
+## Implementacion de una serie Fibonacci 
+
+Vamos a generar una serie de Fibonacci hasta llegar a 1.000.000 y vamos a medir la cantidad de iteraciones que nos tomo
+
+
+```{r}
+start_time <- Sys.time()
+for(i in 0:5)
+{ a<-i
+b <-i+1
+c <- a+b
+print(c)
+}
+end_time <- Sys.time()
+end_time - start_time
+```
+
+```{r}
+start_time <- Sys.time()
+f1<-0
+f2<-1
+N<-0
+vec<- c(f1,f2)
+f3<-0
+
+while (f3 <= 1000000) {
+  N<-N+1
+  f3<-f1++f2
+  vec<- c(vec,f3)
+  f1<-f2
+  f2<-f3
+  c<-a+b
+  i<-i+1
+}
+N
+vec
+
+end_time <- Sys.time()
+end_time - start_time
+```
+
+
+Para generar un numero mayor a 1.000.000 en la serie se necesitan 30 iteraciones 
+
+
+## Ordenacion de un vector por metodo burbuja y el comando sort 
+
+Vamos a ordenar un vector que contiene 200 numeros aleatorios que van del 1 al 1000. Para esto vamos a usar dos metodos distintos, el motodo burbuja y el metodo sort que viene de base con el RStudio. Vamos a medir el tiempo de ejecucion del codigo y la cantidad de recurso computacional utilizado a traves del metodo Microbenchmark
+
+
+```{r}
+library(microbenchmark)
+
+x<-sample(1:1000,200)
+
+
+mbm <- microbenchmark( 
+  "burbuja"={
+
+burbuja <- function(x){
+n<-length(x)
+for(j in 1:(n-1)){
+for(i in 1:(n-j)){
+if(x[i]>x[i+1]){
+temp<-x[i]
+x[i]<-x[i+1]
+x[i+1]<-temp
+}
+}
+}
+return(x)
+}
+res<-burbuja(x)
+
+  },
+
+"sort" = {
+  sort(x)
+}
+)
+
+mbm
+
+```
+
+
+```{r}
+library(ggplot2)
+autoplot(mbm)
+```
+
+
+Comparando los dos metodos a traves de microbenchmark podemos notar que el metodo de la burbuja requiere de mucho mas recursos y tiempo de procesamiento que el metodo sort 
+
+
+# Modelado matemático de una epidema
+
+Utilizando el numero de casos semanales en Argentina para Junio del 2022 y un factor de contagio constante F=1.62, vamos a calcular cuantas semanas tomaria en llegar a los 40.000.000 de contagios 
+
+```{r}
+# Numeros de casos semanales en Argentina
+f1<-25680
+
+N<-0
+f3 <- 1.62
+f2 <- 0
+vec <- c(f1)
+
+while (f1 <= 40000000) {
+  f2 <- f1*f3
+  f1 <- f2
+  N <- N+1
+  vec <- c(vec,f2)
+  
+}
+
+N
+vec
+
+
+```
+
+
+Con el numero de casos actuales semanales en Argentina y con el factor de contagio F=1.62, tardariamos 16 semanas en llegar a los 40 millones de contagiados. 
+
+Este dato se aleja de la realidad y es solo para mostrar como se utilizan las ecuaciones para el modelado de una epidemia. En la realidad el factor de contagio no se mantiene constante y depende de diversos factores como cantidad de contagios y grados de restriccion gubernamental.
+
+
+# Importar datos de la red o de excel
+
+Para importar datos de la red o de un excel utilizamos la funcion Import Dataset y seleccionamos From text (readr). Alli vamos a cargar el archivo .csv que tenemos descargado en nuestra computadora y vamos a seleccionar cual va a ser el delimitador.
+
+```{r}
+library(readr)
+casos <- read_delim("D:/Descargas/casos.csv", 
+    delim = ";", escape_double = FALSE, col_types = cols(...2 = col_number()), 
+    trim_ws = TRUE)
+
+```
+
+En este caso importamos el numero de casos covid en la Argentina para poder analizarlo a traves de los distintos graficos que nos permite realizar el RStudio. 
+
+Primero realizamos un grafico tipo Plot para ver como fue el incremento de casos en funcion del numero de semanas. 
+
+```{r}
+
+plot(casos$...2, main="Contagio 2020", ylab="Casos positivos", xlab="Semanas")
+
+```
+
+Luego realizamanos un histograma para ver cual es la frecuencia del numero de contagiados de los datos obtenidos 
+
+```{r}
+
+hist(as.numeric(casos$...2), main="Histograma de contagios 2020", ylab="Fracuencia", xlab="Casos")
+
+```
+
+Tambien podemos realizar un grafico de densidad de los casos Covid en Argentina. Este grafico me va a permitir reconocer las distintas cepas de covid que circulan en el pais 
+
+```{r}
+
+plot(density(na.omit(casos$...2)), main="Grafico de densidad de contagios", ylab="Densidad", xlab="Casos")
+
+```
+
+En el grafico de densidad podemos observar que se producen 2 picos. Estos dos picos corresponden a la incidencia de la cepa manaos en primer lugar y de la cepa delta en segundo lugar. Con la aparicion de cada cepa, el virus genera un pico en la tasa de contagios. Esto se debe particularmente a las mutuaciones originadas en cada tipo de cepa. 
+
+
+
+
+
+
+
